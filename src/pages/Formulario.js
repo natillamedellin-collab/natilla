@@ -178,9 +178,7 @@ export default function Formulario() {
                 {p.descripcion && <div style={{ fontSize:13, color:'#9aa0a6', marginTop:1 }}>{p.descripcion}</div>}
               </div>
               <div style={{ display:'flex', alignItems:'center', gap:6, flexShrink:0 }}>
-                <button onClick={() => chg(p.id,-1)} style={{ width:32, height:32, borderRadius:'50%', border:'1px solid #dadce0', background:'#fff', color:'#5f6368', fontSize:19, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>−</button>
-                <input type="number" value={qtys[p.id]||0} min={0} onChange={e => setQtys(q => ({...q,[p.id]:Math.max(0,parseInt(e.target.value)||0)}))} style={{ width:50, padding:'6px 4px', border:'1px solid #dadce0', borderRadius:4, textAlign:'center', fontSize:16, fontWeight:500, color:'#3c4043', outline:'none' }} />
-                <button onClick={() => chg(p.id,1)} style={{ width:32, height:32, borderRadius:'50%', border:'1px solid #dadce0', background:'#fff', color:'#5f6368', fontSize:19, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>+</button>
+                <input type="number" value={qtys[p.id]||0} min={0} onChange={e => setQtys(q => ({...q,[p.id]:Math.max(0,parseInt(e.target.value)||0)}))} style={{ width:60, padding:'8px 4px', border:'1px solid #dadce0', borderRadius:4, textAlign:'center', fontSize:16, fontWeight:500, color:'#3c4043', outline:'none' }} />
               </div>
             </div>
           ))}
