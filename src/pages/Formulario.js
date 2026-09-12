@@ -200,7 +200,7 @@ export default function Formulario() {
             ))}
           </div>
           {form.tiene_anticipo === 'si' && (
-            <a href="https://wa.me/573195122754" target="_blank" rel="noreferrer" style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:7, background:'#25d366', color:'#fff', borderRadius:8, padding:13, fontSize:15, fontWeight:500, marginTop:12, textDecoration:'none' }}>
+            <a href="https://wa.me/573203711380" target="_blank" rel="noreferrer" style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:7, background:'#25d366', color:'#fff', borderRadius:8, padding:13, fontSize:15, fontWeight:500, marginTop:12, textDecoration:'none' }}>
               📲 Enviar comprobante por WhatsApp
             </a>
           )}
