@@ -535,6 +535,14 @@ export async function imprimirCotizaciones(pedidos, itemsPorPedido, config) {
 export async function imprimirCuentasCobro(pedidos, itemsPorPedido, config) {
   if(!pedidos.length) return;
   const logo = await prepararLogo(config);
+  
+  let firma = null;
+  const firmaDataUrl = await loadImageDataUrl('/firmafinal.jpg');
+  if (firmaDataUrl) {
+    const dim = await getImageDimensions(firmaDataUrl);
+    firma = { dataUrl: firmaDataUrl, format: detectFormat(firmaDataUrl), dim };
+  }
+
   const doc = new jsPDF({orientation:'portrait', unit:'mm', format:'letter'});
   const PAGE_W = 216, PAGE_H = 279, M = 15;
 
@@ -596,6 +604,28 @@ export async function imprimirCuentasCobro(pedidos, itemsPorPedido, config) {
     let fy = doc.lastAutoTable.finalY + 10;
     doc.setFontSize(8); doc.setFont(BRAND.font,'normal'); doc.setTextColor(...BRAND.textMid);
     doc.text('NO SOMOS RESPONSABLES DE IVA', M, fy);
+    
+    fy += 5;
+    doc.text('Si es agente de retención, por favor practique la retención del 2,5 % por concepto de compras.', M, fy);
+    
+    // Espacio para la firma manual y bloque de firma
+    fy += 22;
+    if (firma) {
+      try {
+        const box = fitBox(firma.dim.w, firma.dim.h, 45); // width of 45mm
+        doc.addImage(firma.dataUrl, firma.format, M, fy - box.h - 1, box.w, box.h);
+      } catch(e) {}
+    }
+    doc.setDrawColor(...BRAND.textMid); doc.setLineWidth(0.3);
+    doc.line(M, fy, M + 60, fy);
+    fy += 4;
+    doc.setFont(BRAND.font,'bold'); doc.setTextColor(...BRAND.textDark);
+    doc.text('PAULA GUTIERREZ', M, fy);
+    fy += 4;
+    doc.setFont(BRAND.font,'normal'); doc.setTextColor(...BRAND.textMid);
+    doc.text('Nit. 43.749.223-8', M, fy);
+    fy += 4;
+    doc.text('Cel. 3203711380', M, fy);
 
     renderCorporateFooter(doc, { config, x: M, pageW: PAGE_W, y: PAGE_H - 16 });
   });

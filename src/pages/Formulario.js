@@ -140,7 +140,9 @@ export default function Formulario() {
     <div style={{ background:'#eeeff1', minHeight:'100vh', fontFamily:"'Segoe UI',system-ui,sans-serif" }}>
       <div style={{ background:'#fff', borderTop:'5px solid #1e7e34', padding:'20px', textAlign:'center', borderBottom:'1px solid #e0e0e0', marginBottom:0 }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10, marginBottom:3 }}>
-          <div style={{ width:34, height:34, background:'#1e7e34', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>🍮</div>
+          <div style={{ width:34, height:34, background:'#1e7e34', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, overflow:'hidden' }}>
+            {config.logo_url ? <img src={config.logo_url} alt="Logo" style={{ width:'100%', height:'100%', objectFit:'cover' }} /> : '🍮'}
+          </div>
           <span style={{ fontSize:22, fontWeight:400, color:'#3c4043' }}>{config.nombre_negocio||'Natilla Medellín'}</span>
         </div>
         <p style={{ fontSize:15, color:'#9aa0a6' }}>Confirmación de Pedido</p>
