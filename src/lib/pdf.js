@@ -377,7 +377,7 @@ export async function imprimirRecibos(pedidos, pagosPorPedido, itemsPorPedido, c
     const saldo = total - totalPagado;
 
     let y = renderCorporateHeader(doc, {
-      config, logo, x: M, y: M+6, pageW: W, marginRight: M,
+      config, logo, x: M, y: M-2, pageW: W, marginRight: M,
       docType: 'Recibo de Caja', docNumber: `No. ${String(pedido.consecutivo).padStart(4,'0')}`,
       docDate: fmtDate(new Date().toISOString().slice(0,10)),
       fontScale: 0.85,
