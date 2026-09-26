@@ -150,11 +150,13 @@ function renderCorporateHeader(doc, { config, logo, x, y, pageW, marginRight, fo
   const logoSize = 13 * fs;
   const topY = y;
 
-  // Logo (proporción respetada, alineado con la línea base del texto)
+  // Logo (proporción respetada, centrado verticalmente con el bloque de texto)
   let xTexto = x;
   if (logo) {
     const box = fitBox(logo.dim.w, logo.dim.h, logoSize);
-    try { doc.addImage(logo.dataUrl, logo.format, x, topY - 2, box.w, box.h); } catch(e) {}
+    const textBlockH = 10 * fs; // altura aprox del bloque nombre+NIT+tel
+    const logoY = topY + (textBlockH - box.h) / 2;
+    try { doc.addImage(logo.dataUrl, logo.format, x, logoY, box.w, box.h); } catch(e) {}
     xTexto = x + box.w + 3;
   }
 
@@ -180,7 +182,7 @@ function renderCorporateHeader(doc, { config, logo, x, y, pageW, marginRight, fo
     doc.rect(boxX, boxTop, boxW, boxH, 'F');
     doc.setTextColor(...BRAND.primary); doc.setFont(BRAND.font, 'bold'); doc.setFontSize(6.8 * fs);
     doc.text(docType.toUpperCase(), boxX + boxW/2, boxTop + 4.2 * fs, { align:'center', charSpace: 0.3 });
-    doc.setFontSize(11.5 * fs);
+    doc.setFontSize(9.5 * fs);
     doc.text(docNumber || '', boxX + boxW/2, boxTop + 10 * fs, { align:'center' });
     if (docDate) {
       doc.setFont(BRAND.font, 'normal'); doc.setFontSize(6 * fs); doc.setTextColor(...BRAND.textMid);
@@ -230,9 +232,9 @@ function renderFinancialSummary(doc, { x, right, y, total, pagado, saldo, fontSc
     doc.text(fmt(saldo), right, y + 1.5 * fs, { align: 'right' });
     y += 6 * fs;
   } else {
-    doc.setFont(BRAND.font, 'bold'); doc.setFontSize(8.5 * fs); doc.setTextColor(...BRAND.primary);
+    doc.setFont(BRAND.font, 'bold'); doc.setFontSize(7 * fs); doc.setTextColor(...BRAND.primary);
     doc.text('PAGADO COMPLETO', (x + right) / 2, y + 1.5 * fs, { align: 'center' });
-    y += 6 * fs;
+    y += 5 * fs;
   }
   return y;
 }
@@ -401,16 +403,16 @@ export async function imprimirRecibos(pedidos, pagosPorPedido, itemsPorPedido, c
           `Entrega: ${entregaHora}`
         ],
         [
-          `Cliente: ${pedido.nombre_empresa||''}`,
+          `Cliente: ${(pedido.nombre_empresa||'').toUpperCase()}`,
           `Tel: ${pedido.telefono||''}`
         ],
         [
-          `Contacto: ${pedido.nombre_contacto||''}`,
+          `Contacto: ${(pedido.nombre_contacto||'').toUpperCase()}`,
           `Dirección: ${pedido.direccion||''}`
         ],
       ],
       styles: { font: BRAND.font, fontSize:6, cellPadding:1.1, textColor:BRAND.textDark, lineColor:BRAND.borderLt, lineWidth:0.15 },
-      columnStyles: { 0:{cellWidth:(W-M*2)*0.48, fontSize:7}, 1:{cellWidth:(W-M*2)*0.52, fontSize:6} },
+      columnStyles: { 0:{cellWidth:(W-M*2)*0.48, fontSize:8}, 1:{cellWidth:(W-M*2)*0.52, fontSize:6} },
     });
     y = doc.lastAutoTable.finalY + 2.5;
 
