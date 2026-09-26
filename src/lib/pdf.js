@@ -379,7 +379,7 @@ export async function imprimirRecibos(pedidos, pagosPorPedido, itemsPorPedido, c
     const saldo = total - totalPagado;
 
     let y = renderCorporateHeader(doc, {
-      config, logo, x: M, y: M-2, pageW: W, marginRight: M,
+      config, logo, x: M, y: M+1, pageW: W, marginRight: M,
       docType: 'Recibo de Caja', docNumber: `No. ${String(pedido.consecutivo).padStart(4,'0')}`,
       docDate: fmtDate(new Date().toISOString().slice(0,10)),
       fontScale: 0.85,
@@ -411,10 +411,16 @@ export async function imprimirRecibos(pedidos, pagosPorPedido, itemsPorPedido, c
           `Dirección: ${pedido.direccion||''}`
         ],
       ],
-      styles: { font: BRAND.font, fontSize:6, cellPadding:1.1, textColor:BRAND.textDark, lineColor:BRAND.borderLt, lineWidth:0.15 },
-      columnStyles: { 0:{cellWidth:(W-M*2)*0.48, fontSize:8}, 1:{cellWidth:(W-M*2)*0.52, fontSize:6} },
+      styles: { font: BRAND.font, fontSize:8, cellPadding:0.9, textColor:BRAND.textDark, lineColor:BRAND.borderLt, lineWidth:0.15 },
+      columnStyles: { 0:{cellWidth:(W-M*2)*0.48}, 1:{cellWidth:(W-M*2)*0.52} },
+      didParseCell: (data) => {
+        // Fila 3 (índice 2) columna derecha = Dirección: fuente pequeña
+        if (data.row.index === 2 && data.column.index === 1) {
+          data.cell.styles.fontSize = 6;
+        }
+      },
     });
-    y = doc.lastAutoTable.finalY + 2.5;
+    y = doc.lastAutoTable.finalY + 1.5;
 
     doc.autoTable({
       startY: y,
@@ -425,7 +431,7 @@ export async function imprimirRecibos(pedidos, pagosPorPedido, itemsPorPedido, c
       columnStyles:{ 0:{cellWidth:11,halign:'center'}, 1:{cellWidth:'auto'}, 2:{cellWidth:17,halign:'right'}, 3:{cellWidth:19,halign:'right'} },
       tableWidth: W-M*2,
     });
-    y = doc.lastAutoTable.finalY + 4;
+    y = doc.lastAutoTable.finalY + 2;
 
     if (pagos.length) {
       doc.setFontSize(6.3); doc.setTextColor(...BRAND.textMid); doc.setFont(BRAND.font,'bold');
@@ -443,7 +449,7 @@ export async function imprimirRecibos(pedidos, pagosPorPedido, itemsPorPedido, c
     y = renderFinancialSummary(doc, { x: M, right: W-M, y, total, pagado: totalPagado, saldo, fontScale: 0.85 });
 
     // Firmas — Despachado izquierda, Recibido derecha (misma línea)
-    y += 5;
+    y += 3;
     doc.setFontSize(6.5); doc.setTextColor(...BRAND.textDark); doc.setFont(BRAND.font,'normal');
     doc.text('Despachado por: ____________________', M, y);
     doc.text('Recibido por: ____________________', W/2 + 2, y);
