@@ -9,17 +9,6 @@ const fmt = n => `$${Number(n||0).toLocaleString('es-CO')}`;
 // Solo cambia cómo se muestra en pantalla: "Pago Normal" (guardado en BD) se ve como "Pago Total"
 const tipoLabel = t => t === 'Pago Normal' ? 'Pago Total' : t;
 
-// Hora SIEMPRE en formato AM/PM
-function fmtHora12(t) {
-  if (!t) return '-';
-  const [hh, mm] = t.split(':').map(Number);
-  const ampm = hh >= 12 ? 'p.m.' : 'a.m.';
-  let h12 = hh % 12; if (h12 === 0) h12 = 12;
-  return `${h12}:${String(mm).padStart(2,'0')} ${ampm}`;
-}
-
-const fmtDate = d => d ? new Date(d+'T12:00').toLocaleDateString('es-CO') : '-';
-
 // Formato con puntos separadores de miles, SIN decimales — para el campo Monto
 const formatMiles = (val) => {
   const soloDigitos = String(val||'').replace(/\D/g,'');
@@ -34,7 +23,7 @@ export default function Pagos() {
   const [items, setItems] = useState({});
   const [config, setConfig] = useState({});
   const [loading, setLoading] = useState(true);
-  const [modalId, setModalId] = useState(null);
+  const [modalId, setModalId] = useState(null); // solo el ID — los datos se derivan en vivo
   const [nuevoPago, setNuevoPago] = useState({ tipo:'Pago Normal', metodo:'Efectivo', monto:'', referencia:'', nota:'' });
   const [savingPago, setSavingPago] = useState(false);
   const [editingPagoId, setEditingPagoId] = useState(null);
@@ -44,12 +33,8 @@ export default function Pagos() {
 
   const [q, setQ] = useState('');
   const [fFecha, setFFecha] = useState('');
+  const [fNit, setFNit] = useState('');
   const [fEstPago, setFEstPago] = useState('');
-  // CAMBIO 3: filtro por producto en Pagos
-  const [fProducto, setFProducto] = useState('');
-  // Ordenamiento columnas nuevas
-  const [ordenFEntrega, setOrdenFEntrega] = useState(null); // null | 'asc' | 'desc'
-  const [ordenHora, setOrdenHora] = useState(null);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -77,43 +62,25 @@ export default function Pagos() {
     return { totalPagado, saldo: totalPedido - totalPagado, completado: (totalPedido - totalPagado) <= 0 };
   };
 
+  // Recalculado en cada render a partir del estado fresco — así el modal
+  // SIEMPRE refleja los datos reales, nunca una "foto" desactualizada.
   const enriquecidos = pedidos.map(p => {
     const pit = items[p.id] || [];
     const totalPedido = pit.reduce((s,i)=>s+(i.subtotal||0),0);
-    const productosStr = pit.map(i=>`${i.cantidad}x ${i.nombre_producto}`).join(', ');
-    return { ...p, totalPedido, ...calcSaldo(p.id, totalPedido), pagosDel: pagos.filter(pg=>pg.pedido_id===p.id), productosStr };
+    return { ...p, totalPedido, ...calcSaldo(p.id, totalPedido), pagosDel: pagos.filter(pg=>pg.pedido_id===p.id) };
   });
-
-  // Lista única de productos para el filtro (Cambio 3)
-  const productosUnicos = [...new Set(
-    enriquecidos.flatMap(p => (items[p.id]||[]).map(i => i.nombre_producto))
-  )].sort();
 
   const filtered = enriquecidos.filter(p => {
     const sq = q.toLowerCase();
     if (sq && !p.nombre_empresa?.toLowerCase().includes(sq) && !String(p.consecutivo).includes(sq) && !p.nombre_contacto?.toLowerCase().includes(sq)) return false;
     if (fFecha && !p.fecha_registro?.startsWith(fFecha)) return false;
+    if (fNit && !p.numero_documento?.includes(fNit)) return false;
     if (fEstPago === 'completado' && !p.completado) return false;
     if (fEstPago === 'pendiente' && p.completado) return false;
-    // CAMBIO 3: filtro por producto
-    if (fProducto && !(items[p.id]||[]).some(i => i.nombre_producto === fProducto)) return false;
     return true;
-  }).sort((a, b) => {
-    if (ordenFEntrega) {
-      const fa = a.fecha_entrega || '';
-      const fb = b.fecha_entrega || '';
-      const cmp = fa.localeCompare(fb);
-      if (cmp !== 0) return ordenFEntrega === 'asc' ? cmp : -cmp;
-    }
-    if (ordenHora) {
-      const ha = a.hora_entrega || '';
-      const hb = b.hora_entrega || '';
-      const cmp = ha.localeCompare(hb);
-      if (cmp !== 0) return ordenHora === 'asc' ? cmp : -cmp;
-    }
-    return 0;
   });
 
+  // El modal SIEMPRE se deriva de los datos frescos, nunca de un snapshot viejo
   const modal = modalId ? enriquecidos.find(p => p.id === modalId) : null;
 
   const totalCobrar = filtered.reduce((s,p)=>s+(p.saldo>0?p.saldo:0),0);
@@ -156,19 +123,7 @@ export default function Pagos() {
   };
 
   const exportarExcel = () => {
-    const data = filtered.map(p => ({
-      'No.': p.consecutivo,
-      'Empresa': p.nombre_empresa,
-      'Contacto': p.nombre_contacto,
-      'Productos': p.productosStr,
-      'F. Entrega': p.fecha_entrega || '',
-      'Hora': p.hora_entrega ? fmtHora12(p.hora_entrega) : '',
-      'Total Pedido': p.totalPedido,
-      'Total Pagado': p.totalPagado,
-      'Saldo': p.saldo,
-      'Estado': p.completado ? 'Completado' : 'Pendiente',
-      'Pagos': p.pagosDel.map(pg=>`${tipoLabel(pg.tipo)}/${pg.metodo}: ${fmt(pg.monto)}`).join(' | ')
-    }));
+    const data = filtered.map(p => ({ 'No.':p.consecutivo,'Empresa':p.nombre_empresa,'Contacto':p.nombre_contacto,'Documento':`${p.tipo_documento||''} ${p.numero_documento||''}`,'Total Pedido':p.totalPedido,'Total Pagado':p.totalPagado,'Saldo':p.saldo,'Estado':p.completado?'Completado':'Pendiente','Pagos':p.pagosDel.map(pg=>`${tipoLabel(pg.tipo)}/${pg.metodo}: ${fmt(pg.monto)}`).join(' | ') }));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), 'Pagos');
     XLSX.writeFile(wb, `Pagos_${new Date().toISOString().slice(0,10)}.xlsx`);
@@ -184,9 +139,6 @@ export default function Pagos() {
     await imprimirRecibos(peds, pagosPorPedido, itemsPorPedido, config);
     toast(`✅ ${peds.length} recibo(s) generados`);
   };
-
-  const clearFilters = () => { setQ(''); setFFecha(''); setFEstPago(''); setFProducto(''); };
-  const hasFilters = q || fFecha || fEstPago || fProducto;
 
   return (
     <div className="page">
@@ -209,24 +161,19 @@ export default function Pagos() {
         <div className="stat"><div className="stat-label">Seleccionados</div><div className="stat-val">{sel.size}</div></div>
       </div>
 
-      {/* FILTROS — CAMBIO 1: eliminado NIT/Cédula. CAMBIO 3: agregado filtro Productos */}
       <div className="filters">
         <div className="search-wrap">
           <Search className="search-icon" />
           <input placeholder="Buscar empresa, contacto, # pedido..." value={q} onChange={e=>setQ(e.target.value)} style={{minWidth:200}} />
         </div>
         <input type="date" value={fFecha} onChange={e=>setFFecha(e.target.value)} title="Fecha de registro" />
-        {/* CAMBIO 3: filtro por Productos */}
-        <select value={fProducto} onChange={e=>setFProducto(e.target.value)} style={{minWidth:150}}>
-          <option value="">Producto (todos)</option>
-          {productosUnicos.map(pr=><option key={pr} value={pr}>{pr}</option>)}
-        </select>
+        <input placeholder="NIT / Cédula" value={fNit} onChange={e=>setFNit(e.target.value)} style={{width:130}} />
         <select value={fEstPago} onChange={e=>setFEstPago(e.target.value)}>
           <option value="">Estado pago (todos)</option>
           <option value="completado">Completado</option>
           <option value="pendiente">Pendiente</option>
         </select>
-        {hasFilters && <button className="btn btn-ghost" onClick={clearFilters}><X size={13} /></button>}
+        {(q||fFecha||fNit||fEstPago) && <button className="btn btn-ghost" onClick={()=>{setQ('');setFFecha('');setFNit('');setFEstPago('');}}><X size={13} /></button>}
       </div>
 
       {loading ? <div className="empty">Cargando…</div> : (
@@ -237,22 +184,7 @@ export default function Pagos() {
                 <th style={{width:36}}><input type="checkbox" checked={sel.size===filtered.length&&filtered.length>0} onChange={()=>sel.size===filtered.length?setSel(new Set()):setSel(new Set(filtered.map(p=>p.id)))} /></th>
                 <th>#</th>
                 <th>Empresa</th>
-                {/* CAMBIO 2: columna Documento eliminada. Nuevas: Productos, F. Entrega, Hora */}
-                <th>Productos</th>
-                <th
-                  style={{cursor:'pointer', userSelect:'none', whiteSpace:'nowrap'}}
-                  onClick={()=>setOrdenFEntrega(o => o==='asc'?'desc':o==='desc'?null:'asc')}
-                  title="Ordenar por Fecha de entrega"
-                >
-                  F. Entrega {ordenFEntrega==='asc'?'▲':ordenFEntrega==='desc'?'▼':'⇅'}
-                </th>
-                <th
-                  style={{cursor:'pointer', userSelect:'none'}}
-                  onClick={()=>setOrdenHora(o => o==='asc'?'desc':o==='desc'?null:'asc')}
-                  title="Ordenar por Hora"
-                >
-                  Hora {ordenHora==='asc'?'▲':ordenHora==='desc'?'▼':'⇅'}
-                </th>
+                <th>Documento</th>
                 <th>Total pedido</th>
                 <th>Pagado</th>
                 <th>Saldo</th>
@@ -262,56 +194,41 @@ export default function Pagos() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(p => {
-                const pit = items[p.id] || [];
-                return (
-                  <tr key={p.id}>
-                    <td><input type="checkbox" checked={sel.has(p.id)} onChange={()=>toggleSel(p.id)} /></td>
-                    <td><span className="td-mono">{String(p.consecutivo).padStart(4,'0')}</span></td>
-                    <td>
-                      <div className="td-bold">{p.nombre_empresa}</div>
-                      <div style={{fontSize:11,color:'#9aa0a6'}}>{p.nombre_contacto}</div>
-                    </td>
-                    {/* CAMBIO 2: Columna Productos */}
-                    <td style={{maxWidth:180}}>
-                      {pit.length === 0 ? '—' : pit.map((i,idx)=>(
-                        <div key={idx} style={{fontSize:12}}>
-                          <span style={{background:'#e6f4ea',color:'#1a5c2a',borderRadius:3,padding:'1px 5px',fontSize:11,marginRight:4}}>{i.cantidad}</span>
-                          {i.nombre_producto}
-                        </div>
-                      ))}
-                    </td>
-                    {/* CAMBIO 2: Columna F. Entrega */}
-                    <td style={{whiteSpace:'nowrap',fontSize:12}}>{p.fecha_entrega ? fmtDate(p.fecha_entrega) : '—'}</td>
-                    {/* CAMBIO 2: Columna Hora */}
-                    <td style={{whiteSpace:'nowrap',fontSize:12}}>{p.hora_entrega ? fmtHora12(p.hora_entrega) : '—'}</td>
-                    <td className="td-right td-bold">{fmt(p.totalPedido)}</td>
-                    <td className="td-right" style={{color:'#1e7e34',fontWeight:500}}>{fmt(p.totalPagado)}</td>
-                    <td className="td-right" style={{fontWeight:600,color:p.saldo>0?'#f29900':'#1e7e34'}}>{p.saldo>0?fmt(p.saldo):'✓'}</td>
-                    <td>
-                      {p.completado
-                        ? <span className="badge badge-green"><CheckCircle size={10} style={{marginRight:3}}/>Completado</span>
-                        : <span className="badge badge-amber"><Clock size={10} style={{marginRight:3}}/>Pendiente</span>}
-                    </td>
-                    <td style={{fontSize:11,color:'#5f6368',maxWidth:200}}>
-                      {p.pagosDel.length===0?'—':p.pagosDel.map((pg,i)=>(
-                        <div key={i}>{tipoLabel(pg.tipo)} · {pg.metodo}: {fmt(pg.monto)}{pg.referencia?` · ${pg.referencia}`:''}</div>
-                      ))}
-                    </td>
-                    <td>
-                      <button className="btn btn-green" style={{padding:'4px 10px'}} onClick={()=>{setModalId(p.id);setNuevoPago({tipo:'Pago Normal',metodo:'Efectivo',monto:p.saldo>0?formatMiles(Math.round(p.saldo)):'',referencia:'',nota:''});}}>
-                        <Plus size={12} /> Pago
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
+              {filtered.map(p => (
+                <tr key={p.id}>
+                  <td><input type="checkbox" checked={sel.has(p.id)} onChange={()=>toggleSel(p.id)} /></td>
+                  <td><span className="td-mono">{String(p.consecutivo).padStart(4,'0')}</span></td>
+                  <td>
+                    <div className="td-bold">{p.nombre_empresa}</div>
+                    <div style={{fontSize:11,color:'#9aa0a6'}}>{p.nombre_contacto}</div>
+                  </td>
+                  <td style={{fontSize:12}}>{p.tipo_documento} {p.numero_documento}</td>
+                  <td className="td-right td-bold">{fmt(p.totalPedido)}</td>
+                  <td className="td-right" style={{color:'#1e7e34',fontWeight:500}}>{fmt(p.totalPagado)}</td>
+                  <td className="td-right" style={{fontWeight:600,color:p.saldo>0?'#f29900':'#1e7e34'}}>{p.saldo>0?fmt(p.saldo):'✓'}</td>
+                  <td>
+                    {p.completado
+                      ? <span className="badge badge-green"><CheckCircle size={10} style={{marginRight:3}}/>Completado</span>
+                      : <span className="badge badge-amber"><Clock size={10} style={{marginRight:3}}/>Pendiente</span>}
+                  </td>
+                  <td style={{fontSize:11,color:'#5f6368',maxWidth:200}}>
+                    {p.pagosDel.length===0?'—':p.pagosDel.map((pg,i)=>(
+                      <div key={i}>{tipoLabel(pg.tipo)} · {pg.metodo}: {fmt(pg.monto)}{pg.referencia?` · ${pg.referencia}`:''}</div>
+                    ))}
+                  </td>
+                  <td>
+                    <button className="btn btn-green" style={{padding:'4px 10px'}} onClick={()=>{setModalId(p.id);setNuevoPago({tipo:'Pago Normal',metodo:'Efectivo',monto:p.saldo>0?formatMiles(Math.round(p.saldo)):'',referencia:'',nota:''});}}>
+                      <Plus size={12} /> Pago
+                    </button>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
       )}
 
-      {/* Modal pago */}
+      {/* Modal pago — siempre refleja los datos más recientes (derivado de enriquecidos) */}
       {modal && (
         <div className="overlay" onClick={cerrarModal}>
           <div className="modal" onClick={e=>e.stopPropagation()}>

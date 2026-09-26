@@ -360,7 +360,7 @@ export async function imprimirComandas(pedidos, itemsPorPedido, config) {
 }
 
 // ════════════════════════════════════════════════════════════════════════
-// RECIBO DE CAJA — media carta vertical (140×216mm), muy compacto
+// RECIBO DE CAJA — media carta vertical (140×216mm), compacto y optimizado
 // ════════════════════════════════════════════════════════════════════════
 export async function imprimirRecibos(pedidos, pagosPorPedido, itemsPorPedido, config) {
   if(!pedidos.length) return;
@@ -383,26 +383,36 @@ export async function imprimirRecibos(pedidos, pagosPorPedido, itemsPorPedido, c
       fontScale: 0.85,
     });
 
+    // Fila 1: NIT | Entrega · Hora (en la misma celda)
+    // Fila 2: Cliente | Tel
+    // Fila 3: Contacto | Dirección (en la misma celda, lado derecho)
+    const entregaHora = [
+      fmtDate(pedido.fecha_entrega),
+      fmtHora12(pedido.hora_entrega)
+    ].filter(Boolean).join('  ·  ');
+
     doc.autoTable({
       startY: y,
       margin: {left:M, right:M},
       theme: 'grid',
       body: [
-        [`NIT/CC: ${pedido.tipo_documento||''} ${pedido.numero_documento||''}`, `Entrega: ${fmtDate(pedido.fecha_entrega)}`],
-        [`Cliente: ${pedido.nombre_empresa||''}`, `Hora: ${fmtHora12(pedido.hora_entrega)}`],
-        [`Contacto: ${pedido.nombre_contacto||''}`, `Tel: ${pedido.telefono||''}`],
+        [
+          `NIT/CC: ${pedido.tipo_documento||''} ${pedido.numero_documento||''}`,
+          `Entrega: ${entregaHora}`
+        ],
+        [
+          `Cliente: ${pedido.nombre_empresa||''}`,
+          `Tel: ${pedido.telefono||''}`
+        ],
+        [
+          `Contacto: ${pedido.nombre_contacto||''}`,
+          `Dirección: ${pedido.direccion||''}`
+        ],
       ],
-      styles: { font: BRAND.font, fontSize:6, cellPadding:1.4, textColor:BRAND.textDark, lineColor:BRAND.borderLt, lineWidth:0.15 },
-      columnStyles: { 0:{cellWidth:(W-M*2)*0.55}, 1:{cellWidth:(W-M*2)*0.45} },
+      styles: { font: BRAND.font, fontSize:6, cellPadding:1.1, textColor:BRAND.textDark, lineColor:BRAND.borderLt, lineWidth:0.15 },
+      columnStyles: { 0:{cellWidth:(W-M*2)*0.48}, 1:{cellWidth:(W-M*2)*0.52} },
     });
-    doc.autoTable({
-      startY: doc.lastAutoTable.finalY,
-      margin: {left:M, right:M},
-      theme: 'grid',
-      body: [[`Dirección: ${pedido.direccion||''}`]],
-      styles: { font: BRAND.font, fontSize:6, cellPadding:1.4, textColor:BRAND.textDark, lineColor:BRAND.borderLt, lineWidth:0.15 },
-    });
-    y = doc.lastAutoTable.finalY + 4;
+    y = doc.lastAutoTable.finalY + 2.5;
 
     doc.autoTable({
       startY: y,
@@ -413,7 +423,7 @@ export async function imprimirRecibos(pedidos, pagosPorPedido, itemsPorPedido, c
       columnStyles:{ 0:{cellWidth:11,halign:'center'}, 1:{cellWidth:'auto'}, 2:{cellWidth:17,halign:'right'}, 3:{cellWidth:19,halign:'right'} },
       tableWidth: W-M*2,
     });
-    y = doc.lastAutoTable.finalY + 5;
+    y = doc.lastAutoTable.finalY + 4;
 
     if (pagos.length) {
       doc.setFontSize(6.3); doc.setTextColor(...BRAND.textMid); doc.setFont(BRAND.font,'bold');
@@ -430,17 +440,18 @@ export async function imprimirRecibos(pedidos, pagosPorPedido, itemsPorPedido, c
 
     y = renderFinancialSummary(doc, { x: M, right: W-M, y, total, pagado: totalPagado, saldo, fontScale: 0.85 });
 
-    // Firmas manuales
-    y += 6;
+    // Firmas — Despachado izquierda, Recibido derecha (misma línea)
+    y += 5;
     doc.setFontSize(6.5); doc.setTextColor(...BRAND.textDark); doc.setFont(BRAND.font,'normal');
-    doc.text('Despachado por: ___________________________', M, y); y += 6;
-    doc.text('Recibido por: ___________________________', M, y); y += 7;
+    doc.text('Despachado por: ____________________', M, y);
+    doc.text('Recibido por: ____________________', W/2 + 2, y);
+    y += 5;
 
-    // Número de cuenta para consignación
+    // Número de cuenta justo debajo de firmas
     doc.setDrawColor(...BRAND.borderLt); doc.setLineWidth(0.3);
-    doc.line(M, y-3, W-M, y-3);
+    doc.line(M, y-1.5, W-M, y-1.5);
     doc.setFontSize(6); doc.setTextColor(...BRAND.textMid);
-    doc.text('Cuenta ahorros Bancolombia 27593819979 a nombre de Paula Gutiérrez', M, y, { maxWidth: W-M*2 });
+    doc.text('Cuenta ahorros Bancolombia 27593819979 a nombre de Paula Gutiérrez', M, y+2, { maxWidth: W-M*2 });
 
     renderCorporateFooter(doc, { config, x: M, pageW: W, y: 216-M });
   });

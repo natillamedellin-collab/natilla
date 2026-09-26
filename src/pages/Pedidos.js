@@ -43,6 +43,8 @@ export default function Pedidos() {
   const [fFechaEntHasta, setFechaEntHasta] = useState('');
   const [fEstado, setFEstado] = useState('');
   const [fDom, setFDom] = useState('');
+  // CAMBIO 3: filtro por producto en Pedidos
+  const [fProducto, setFProducto] = useState('');
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -83,6 +85,8 @@ export default function Pedidos() {
     if (fFechaEntHasta && (!p.fecha_entrega || p.fecha_entrega > fFechaEntHasta)) return false;
     if (fEstado && p.estado !== fEstado) return false;
     if (fDom && p.domiciliario_id !== fDom) return false;
+    // CAMBIO 3: filtro por producto
+    if (fProducto && !(items[p.id]||[]).some(i => i.nombre_producto === fProducto)) return false;
     return true;
   }).sort((a, b) => {
     if (!ordenHora) return 0;
@@ -273,8 +277,13 @@ export default function Pedidos() {
     toast(`✅ ${nombre} generado (${peds.length})`);
   };
 
-  const clearFilters = () => { setQ(''); setFechaReg(''); setFechaEntDesde(''); setFechaEntHasta(''); setFEstado(''); setFDom(''); };
-  const hasFilters = q || fFechaReg || fFechaEntDesde || fFechaEntHasta || fEstado || fDom;
+  const clearFilters = () => { setQ(''); setFechaReg(''); setFechaEntDesde(''); setFechaEntHasta(''); setFEstado(''); setFDom(''); setFProducto(''); };
+  const hasFilters = q || fFechaReg || fFechaEntDesde || fFechaEntHasta || fEstado || fDom || fProducto;
+
+  // Lista única de productos para el filtro (CAMBIO 3)
+  const productosUnicosP = [...new Set(
+    Object.values(items).flat().map(i => i.nombre_producto)
+  )].sort();
 
   const totalEditado = editItems.reduce((s,i)=>s+(parseFloat(i.cantidad)||0)*(parseFloat(i.precio_unitario)||0),0);
 
@@ -335,6 +344,11 @@ export default function Pedidos() {
         <select value={fDom} onChange={e=>setFDom(e.target.value)}>
           <option value="">Mensajero (todos)</option>
           {domiciliarios.map(d=><option key={d.id} value={d.id}>{d.nombre}</option>)}
+        </select>
+        {/* CAMBIO 3: filtro por Productos en Pedidos */}
+        <select value={fProducto} onChange={e=>setFProducto(e.target.value)} style={{minWidth:150}}>
+          <option value="">Producto (todos)</option>
+          {productosUnicosP.map(pr=><option key={pr} value={pr}>{pr}</option>)}
         </select>
         {hasFilters && <button className="btn btn-ghost" onClick={clearFilters}><X size={13} /> Limpiar</button>}
       </div>
