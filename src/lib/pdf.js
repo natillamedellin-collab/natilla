@@ -150,11 +150,11 @@ function renderCorporateHeader(doc, { config, logo, x, y, pageW, marginRight, fo
   const logoSize = 13 * fs;
   const topY = y;
 
-  // Logo (proporción respetada, nunca deformado)
+  // Logo (proporción respetada, alineado con la línea base del texto)
   let xTexto = x;
   if (logo) {
     const box = fitBox(logo.dim.w, logo.dim.h, logoSize);
-    try { doc.addImage(logo.dataUrl, logo.format, x, topY - box.h * 0.6, box.w, box.h); } catch(e) {}
+    try { doc.addImage(logo.dataUrl, logo.format, x, topY - 2, box.w, box.h); } catch(e) {}
     xTexto = x + box.w + 3;
   }
 
@@ -410,7 +410,7 @@ export async function imprimirRecibos(pedidos, pagosPorPedido, itemsPorPedido, c
         ],
       ],
       styles: { font: BRAND.font, fontSize:6, cellPadding:1.1, textColor:BRAND.textDark, lineColor:BRAND.borderLt, lineWidth:0.15 },
-      columnStyles: { 0:{cellWidth:(W-M*2)*0.48}, 1:{cellWidth:(W-M*2)*0.52} },
+      columnStyles: { 0:{cellWidth:(W-M*2)*0.48, fontSize:7}, 1:{cellWidth:(W-M*2)*0.52, fontSize:6} },
     });
     y = doc.lastAutoTable.finalY + 2.5;
 
