@@ -44,8 +44,10 @@ export default function Pagos() {
 
   const [q, setQ] = useState('');
   const [fFecha, setFFecha] = useState('');
+  const [fFechaEntDesde, setFFechaEntDesde] = useState('');
+  const [fFechaEntHasta, setFFechaEntHasta] = useState('');
   const [fEstPago, setFEstPago] = useState('');
-  // CAMBIO 3: filtro por producto en Pagos
+  // filtro por producto en Pagos
   const [fProducto, setFProducto] = useState('');
   // Ordenamiento columnas nuevas
   const [ordenFEntrega, setOrdenFEntrega] = useState(null); // null | 'asc' | 'desc'
@@ -93,6 +95,8 @@ export default function Pagos() {
     const sq = q.toLowerCase();
     if (sq && !p.nombre_empresa?.toLowerCase().includes(sq) && !String(p.consecutivo).includes(sq) && !p.nombre_contacto?.toLowerCase().includes(sq)) return false;
     if (fFecha && !p.fecha_registro?.startsWith(fFecha)) return false;
+    if (fFechaEntDesde && (!p.fecha_entrega || p.fecha_entrega < fFechaEntDesde)) return false;
+    if (fFechaEntHasta && (!p.fecha_entrega || p.fecha_entrega > fFechaEntHasta)) return false;
     if (fEstPago === 'completado' && !p.completado) return false;
     if (fEstPago === 'pendiente' && p.completado) return false;
     // CAMBIO 3: filtro por producto
@@ -185,8 +189,8 @@ export default function Pagos() {
     toast(`✅ ${peds.length} recibo(s) generados`);
   };
 
-  const clearFilters = () => { setQ(''); setFFecha(''); setFEstPago(''); setFProducto(''); };
-  const hasFilters = q || fFecha || fEstPago || fProducto;
+  const clearFilters = () => { setQ(''); setFFecha(''); setFFechaEntDesde(''); setFFechaEntHasta(''); setFEstPago(''); setFProducto(''); };
+  const hasFilters = q || fFecha || fFechaEntDesde || fFechaEntHasta || fEstPago || fProducto;
 
   return (
     <div className="page">
@@ -215,7 +219,18 @@ export default function Pagos() {
           <Search className="search-icon" />
           <input placeholder="Buscar empresa, contacto, # pedido..." value={q} onChange={e=>setQ(e.target.value)} style={{minWidth:200}} />
         </div>
-        <input type="date" value={fFecha} onChange={e=>setFFecha(e.target.value)} title="Fecha de registro" />
+        <div style={{display:'flex',flexDirection:'column',gap:2}}>
+          <label style={{fontSize:10,color:'#9aa0a6',marginBottom:1}}>Fecha del pedido</label>
+          <input type="date" value={fFecha} onChange={e=>setFFecha(e.target.value)} />
+        </div>
+        <div style={{display:'flex',flexDirection:'column',gap:2}}>
+          <label style={{fontSize:10,color:'#9aa0a6',marginBottom:1}}>Entrega desde</label>
+          <input type="date" value={fFechaEntDesde} onChange={e=>setFFechaEntDesde(e.target.value)} />
+        </div>
+        <div style={{display:'flex',flexDirection:'column',gap:2}}>
+          <label style={{fontSize:10,color:'#9aa0a6',marginBottom:1}}>Entrega hasta</label>
+          <input type="date" value={fFechaEntHasta} onChange={e=>setFFechaEntHasta(e.target.value)} />
+        </div>
         {/* CAMBIO 3: filtro por Productos */}
         <select value={fProducto} onChange={e=>setFProducto(e.target.value)} style={{minWidth:150}}>
           <option value="">Producto (todos)</option>
