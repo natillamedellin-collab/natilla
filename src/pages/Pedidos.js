@@ -39,7 +39,7 @@ export default function Pedidos() {
   const [q, setQ] = useState('');
   const [ordenHora, setOrdenHora] = useState(null); // null | 'asc' | 'desc'
   const [fFechaReg, setFechaReg] = useState('');
-  const [fFechaEntDesde, setFechaEntDesde] = useState(() => new Date().toISOString().slice(0,10));
+  const [fFechaEntDesde, setFechaEntDesde] = useState(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; });
   const [fFechaEntHasta, setFechaEntHasta] = useState('');
   const [fEstado, setFEstado] = useState('');
   const [fDom, setFDom] = useState('');
@@ -277,7 +277,7 @@ export default function Pedidos() {
     toast(`✅ ${nombre} generado (${peds.length})`);
   };
 
-  const clearFilters = () => { setQ(''); setFechaReg(''); setFechaEntDesde(new Date().toISOString().slice(0,10)); setFechaEntHasta(''); setFEstado(''); setFDom(''); setFProducto(''); };
+  const clearFilters = () => { const d = new Date(); const hoy = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; setQ(''); setFechaReg(''); setFechaEntDesde(hoy); setFechaEntHasta(''); setFEstado(''); setFDom(''); setFProducto(''); };
   const hasFilters = q || fFechaReg || fFechaEntDesde || fFechaEntHasta || fEstado || fDom || fProducto;
 
   // Lista única de productos para el filtro (CAMBIO 3)
@@ -390,16 +390,21 @@ export default function Pedidos() {
                       {p.numero_documento && <div style={{fontSize:11,color:'#9aa0a6'}}>NIT: {p.numero_documento}</div>}
                     </td>
                     <td>{p.nombre_contacto}</td>
-                    <td style={{maxWidth:220}}>
-                      {pit.map(i=>(
-                        <div key={i.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:6,fontSize:12,marginBottom:1}}>
-                          <div>
-                            <span style={{background:'#e6f4ea',color:'#1a5c2a',borderRadius:3,padding:'1px 5px',fontSize:11,marginRight:4}}>{i.cantidad}</span>
-                            {i.nombre_producto}
-                          </div>
-                          <span style={{color:'#5f6368',fontSize:11,whiteSpace:'nowrap'}}>{fmt(i.precio_unitario||0)}</span>
-                        </div>
-                      ))}
+                    <td style={{minWidth:240}}>
+                      <table style={{borderCollapse:'collapse',width:'100%',fontSize:11}}>
+                        <tbody>
+                          {pit.map(i=>(
+                            <tr key={i.id}>
+                              <td style={{paddingRight:6,paddingBottom:2,color:'#202124'}}>{i.nombre_producto}</td>
+                              <td style={{paddingRight:6,paddingBottom:2,whiteSpace:'nowrap',color:'#5f6368',textAlign:'center'}}>
+                                <span style={{background:'#e6f4ea',color:'#1a5c2a',borderRadius:3,padding:'1px 5px'}}>{i.cantidad}</span>
+                              </td>
+                              <td style={{paddingRight:6,paddingBottom:2,whiteSpace:'nowrap',color:'#5f6368',textAlign:'right'}}>{fmt(i.precio_unitario||0)}</td>
+                              <td style={{paddingBottom:2,whiteSpace:'nowrap',fontWeight:600,color:'#202124',textAlign:'right'}}>{i.subtotal>0?fmt(i.subtotal):'-'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </td>
                     <td>{fmtDate(p.fecha_entrega)}</td>
                     <td>{fmtHora12(p.hora_entrega)}</td>
