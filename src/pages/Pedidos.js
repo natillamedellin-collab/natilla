@@ -39,7 +39,7 @@ export default function Pedidos() {
   const [q, setQ] = useState('');
   const [ordenHora, setOrdenHora] = useState(null); // null | 'asc' | 'desc'
   const [fFechaReg, setFechaReg] = useState('');
-  const [fFechaEntDesde, setFechaEntDesde] = useState('');
+  const [fFechaEntDesde, setFechaEntDesde] = useState(() => new Date().toISOString().slice(0,10));
   const [fFechaEntHasta, setFechaEntHasta] = useState('');
   const [fEstado, setFEstado] = useState('');
   const [fDom, setFDom] = useState('');
@@ -277,7 +277,7 @@ export default function Pedidos() {
     toast(`✅ ${nombre} generado (${peds.length})`);
   };
 
-  const clearFilters = () => { setQ(''); setFechaReg(''); setFechaEntDesde(''); setFechaEntHasta(''); setFEstado(''); setFDom(''); setFProducto(''); };
+  const clearFilters = () => { setQ(''); setFechaReg(''); setFechaEntDesde(new Date().toISOString().slice(0,10)); setFechaEntHasta(''); setFEstado(''); setFDom(''); setFProducto(''); };
   const hasFilters = q || fFechaReg || fFechaEntDesde || fFechaEntHasta || fEstado || fDom || fProducto;
 
   // Lista única de productos para el filtro (CAMBIO 3)
@@ -384,10 +384,22 @@ export default function Pedidos() {
                   <tr key={p.id} style={sel.has(p.id)?{background:'#f0fdf4'}:{}}>
                     <td><input type="checkbox" checked={sel.has(p.id)} onChange={()=>toggleSel(p.id)} /></td>
                     <td><span className="td-mono">{String(p.consecutivo).padStart(4,'0')}</span></td>
-                    <td><div className="td-bold">{p.nombre_empresa}</div><div style={{fontSize:11,color:'#9aa0a6'}}>{p.telefono}</div></td>
+                    <td>
+                      <div className="td-bold">{p.nombre_empresa}</div>
+                      <div style={{fontSize:11,color:'#9aa0a6'}}>{p.telefono}</div>
+                      {p.numero_documento && <div style={{fontSize:11,color:'#9aa0a6'}}>NIT: {p.numero_documento}</div>}
+                    </td>
                     <td>{p.nombre_contacto}</td>
-                    <td style={{maxWidth:200}}>
-                      {pit.map(i=><div key={i.id} style={{fontSize:12}}><span style={{background:'#e6f4ea',color:'#1a5c2a',borderRadius:3,padding:'1px 5px',fontSize:11,marginRight:4}}>{i.cantidad}</span>{i.nombre_producto}</div>)}
+                    <td style={{maxWidth:220}}>
+                      {pit.map(i=>(
+                        <div key={i.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:6,fontSize:12,marginBottom:1}}>
+                          <div>
+                            <span style={{background:'#e6f4ea',color:'#1a5c2a',borderRadius:3,padding:'1px 5px',fontSize:11,marginRight:4}}>{i.cantidad}</span>
+                            {i.nombre_producto}
+                          </div>
+                          <span style={{color:'#5f6368',fontSize:11,whiteSpace:'nowrap'}}>{fmt(i.precio_unitario||0)}</span>
+                        </div>
+                      ))}
                     </td>
                     <td>{fmtDate(p.fecha_entrega)}</td>
                     <td>{fmtHora12(p.hora_entrega)}</td>
