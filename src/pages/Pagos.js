@@ -288,11 +288,14 @@ export default function Pagos() {
                       <div style={{fontSize:11,color:'#9aa0a6'}}>{p.nombre_contacto}</div>
                     </td>
                     {/* CAMBIO 2: Columna Productos */}
-                    <td style={{maxWidth:180}}>
+                    <td style={{maxWidth:220}}>
                       {pit.length === 0 ? '—' : pit.map((i,idx)=>(
-                        <div key={idx} style={{fontSize:12}}>
-                          <span style={{background:'#e6f4ea',color:'#1a5c2a',borderRadius:3,padding:'1px 5px',fontSize:11,marginRight:4}}>{i.cantidad}</span>
-                          {i.nombre_producto}
+                        <div key={idx} style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:6,fontSize:12,marginBottom:1}}>
+                          <div>
+                            <span style={{background:'#e6f4ea',color:'#1a5c2a',borderRadius:3,padding:'1px 5px',fontSize:11,marginRight:4}}>{i.cantidad}</span>
+                            {i.nombre_producto}
+                          </div>
+                          <span style={{color:'#5f6368',fontSize:11,whiteSpace:'nowrap'}}>{fmt(i.precio_unitario||0)}</span>
                         </div>
                       ))}
                     </td>
@@ -388,11 +391,11 @@ export default function Pagos() {
             </div>
             <div className="fg" style={{marginBottom:10}}>
               <label>Monto ($)</label>
-              <div style={{display:'flex',gap:6}}>
-                <input type="text" inputMode="numeric" value={nuevoPago.monto} onChange={e=>setNuevoPago(n=>({...n,monto:formatMiles(e.target.value)}))} placeholder="0" style={{flex:1,padding:'8px 10px',border:'1px solid #dadce0',borderRadius:4,fontSize:14}} />
-                <button type="button" onClick={()=>setNuevoPago(n=>({...n,monto:''}))} title="Borrar monto" style={{padding:'8px 12px',border:'1px solid #dadce0',borderRadius:4,background:'#fef7f6',color:'#d93025',cursor:'pointer',display:'flex',alignItems:'center'}}>
-                  <X size={16}/>
-                </button>
+              <div style={{position:'relative',display:'flex',alignItems:'center'}}>
+                <input type="text" inputMode="numeric" value={nuevoPago.monto} onChange={e=>setNuevoPago(n=>({...n,monto:formatMiles(e.target.value)}))} placeholder="0" style={{width:'100%',padding:'8px 36px 8px 10px',border:'1px solid #dadce0',borderRadius:4,fontSize:14}} />
+                {nuevoPago.monto && <button type="button" onClick={()=>setNuevoPago(n=>({...n,monto:''}))} title="Borrar monto" style={{position:'absolute',right:6,background:'none',border:'none',color:'#d93025',cursor:'pointer',display:'flex',alignItems:'center',padding:2}}>
+                  <X size={15}/>
+                </button>}
               </div>
             </div>
             <div className="fg" style={{marginBottom:14}}>
