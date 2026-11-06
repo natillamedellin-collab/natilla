@@ -39,8 +39,8 @@ export default function Pedidos() {
   const [q, setQ] = useState('');
   const [ordenHora, setOrdenHora] = useState(null); // null | 'asc' | 'desc'
   const [fFechaReg, setFechaReg] = useState('');
-  const [fFechaEntDesde, setFechaEntDesde] = useState(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; });
-  const [fFechaEntHasta, setFechaEntHasta] = useState(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; });
+  const [fFechaEntDesde, setFechaEntDesde] = useState('');
+  const [fFechaEntHasta, setFechaEntHasta] = useState('');
   const [fEstado, setFEstado] = useState('');
   const [fDom, setFDom] = useState('');
   // CAMBIO 3: filtro por producto en Pedidos
@@ -277,7 +277,9 @@ export default function Pedidos() {
     toast(`✅ ${nombre} generado (${peds.length})`);
   };
 
-  const clearFilters = () => { const d = new Date(); const hoy = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; setQ(''); setFechaReg(''); setFechaEntDesde(hoy); setFechaEntHasta(hoy); setFEstado(''); setFDom(''); setFProducto(''); };
+  const hoyStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+  const filtrarHoy = () => { const h = hoyStr(); setQ(''); setFechaReg(''); setFechaEntDesde(h); setFechaEntHasta(h); setFEstado(''); setFDom(''); setFProducto(''); };
+  const clearFilters = () => { setQ(''); setFechaReg(''); setFechaEntDesde(''); setFechaEntHasta(''); setFEstado(''); setFDom(''); setFProducto(''); };
   const hasFilters = q || fFechaReg || fFechaEntDesde || fFechaEntHasta || fEstado || fDom || fProducto;
 
   // Lista única de productos para el filtro (CAMBIO 3)
@@ -318,6 +320,10 @@ export default function Pedidos() {
         <div className="stat"><div className="stat-label">En producción</div><div className="stat-val amber">{filtered.filter(p=>p.estado==='En producción').length}</div></div>
         <div className="stat"><div className="stat-val">{filtered.filter(p=>p.estado==='Entregado').length}</div><div className="stat-label">Entregados</div></div>
         <div className="stat"><div className="stat-label">Total ventas</div><div className="stat-val text">{fmt(totalVentas)}</div></div>
+      </div>
+
+      <div style={{marginBottom:8}}>
+        <button className="btn btn-green" onClick={filtrarHoy} style={{fontWeight:600}}>📦 Entregas Hoy</button>
       </div>
 
       <div className="filters">
