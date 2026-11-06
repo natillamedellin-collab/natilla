@@ -189,6 +189,8 @@ export default function Pagos() {
     toast(`✅ ${peds.length} recibo(s) generados`);
   };
 
+  const hoyStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+  const filtrarHoy = () => { const h = hoyStr(); setQ(''); setFFecha(''); setFFechaEntDesde(h); setFFechaEntHasta(h); setFEstPago(''); setFProducto(''); };
   const clearFilters = () => { setQ(''); setFFecha(''); setFFechaEntDesde(''); setFFechaEntHasta(''); setFEstPago(''); setFProducto(''); };
   const hasFilters = q || fFecha || fFechaEntDesde || fFechaEntHasta || fEstPago || fProducto;
 
@@ -211,6 +213,10 @@ export default function Pagos() {
         <div className="stat"><div className="stat-label">Pendientes</div><div className="stat-val amber">{filtered.filter(p=>!p.completado).length}</div></div>
         <div className="stat"><div className="stat-label">Total por cobrar</div><div className="stat-val text">{fmt(totalCobrar)}</div></div>
         <div className="stat"><div className="stat-label">Seleccionados</div><div className="stat-val">{sel.size}</div></div>
+      </div>
+
+      <div style={{marginBottom:8}}>
+        <button className="btn btn-green" onClick={filtrarHoy} style={{fontWeight:600}}>📦 Entregas Hoy</button>
       </div>
 
       {/* FILTROS — CAMBIO 1: eliminado NIT/Cédula. CAMBIO 3: agregado filtro Productos */}
