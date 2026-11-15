@@ -79,6 +79,7 @@ export default function Pedidos() {
         !p.nombre_empresa?.toLowerCase().includes(sq) &&
         !p.nombre_contacto?.toLowerCase().includes(sq) &&
         !String(p.consecutivo).includes(sq) &&
+        !String(p.consecutivo).padStart(4,'0').includes(sq) &&
         !p.telefono?.includes(sq)) return false;
     if (fFechaReg && !p.fecha_registro?.startsWith(fFechaReg)) return false;
     if (fFechaEntDesde && (!p.fecha_entrega || p.fecha_entrega < fFechaEntDesde)) return false;
